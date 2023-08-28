@@ -73,3 +73,45 @@ func (repository *commentRepositoryImpl) FindAll(ctx context.Context) ([]entity.
 
 	return comments, nil
 }
+
+func (repository *commentRepositoryImpl) UpdateById(ctx context.Context, id int32, comment entity.Comment) (entity.Comment, error) {
+	script := "UPDATE comments SET email=?, comment=? WHERE id=?"
+	result, err := repository.DB.ExecContext(ctx, script, comment.Email, comment.Comment, id)
+
+	newComment := entity.Comment{}
+
+	if err != nil {
+		return newComment, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return newComment, err
+	}
+
+	if rowsAffected == 0 {
+		return comment, errors.New("Id " + strconv.Itoa(int(id)) + " Not Found")
+	}
+
+	comment.Id = id
+	return comment, nil
+}
+
+func (repository *commentRepositoryImpl) Delete(ctx context.Context, id int32) (bool, error) {
+	script := "DELETE FROM comments WHERE id=?"
+	result, err := repository.DB.ExecContext(ctx, script, id)
+
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	if rowsAffected == 0 {
+		return false, nil
+	}
+	
+	return true, nil
+}
